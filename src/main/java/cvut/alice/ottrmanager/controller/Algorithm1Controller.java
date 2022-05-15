@@ -1,65 +1,48 @@
 package cvut.alice.ottrmanager.controller;
 
-import cvut.alice.ottrmanager.model.Argument;
-import cvut.alice.ottrmanager.model.Template;
-import cvut.alice.ottrmanager.tool.a12.Interpreter;
-import cvut.alice.ottrmanager.tool.a12.PairFinder;
+import cvut.alice.ottrmanager.model.RefactorResponse;
 import cvut.alice.ottrmanager.tool.common.Manager;
 import org.apache.jena.rdf.model.*;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
-import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 
+//TODO: algo1
+//TODO: algo2
+//TODO: fuseki integration
 
 @RestController
 public class Algorithm1Controller {
 
-//    private final String getTemplates = "select * where {" +
-//            "?template a ottr:Template." +
-//            "?template ottr:parameters ?parameter." +
-//            "?parameter ottr:variable ?variable." +
-//            "?parameter ottr:type ?type." +
-//            "}";
-
     @PostMapping(path = "/refactor")
-    public @ResponseBody String refactorSentModel(@RequestBody String body, HttpServletResponse httpServletResponse){
-        Model model = ModelFactory.createDefaultModel();
-        model.read(new ByteArrayInputStream(body.getBytes()), null);
-        if (model.isEmpty()) {
+    public @ResponseBody Collection<RefactorResponse> refactorSentModel(@RequestBody String body, HttpServletResponse httpServletResponse) {
+        Model inputModel = ModelFactory.createDefaultModel();
+        Model templateModel = Manager.getManager().getDataset().getDefaultModel();
+        inputModel.read(new ByteArrayInputStream(body.getBytes()), null);
+        if (inputModel.isEmpty()) {
             httpServletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         }
-        PairFinder pairFinder = new PairFinder();
-        Manager.getManager().clear();
-        Property parameters = Manager.getManager().getModel().createProperty("http://ns.ottr.xyz/0.4/parameters");
-        Selector selector = new SimpleSelector(null, parameters, (RDFNode) null);
-        StmtIterator stmtIterator = Manager.getManager().getModel().listStatements(selector);
-        while (stmtIterator.hasNext()){
-            Statement statement = stmtIterator.nextStatement();
-            Template template = new Template(statement.getSubject().getURI(), new ArrayList<>(), new ArrayList<>());
-            RDFNode object = statement.getObject();
-            if (object.isAnon()) {
-                Selector blankSelector = new SimpleSelector(object.asResource(), null, (RDFNode) null);
-                StmtIterator blankStmtIterator = Manager.getManager().getModel().listStatements(blankSelector);
-                Argument argument = new Argument(null,null);
-                while (blankStmtIterator.hasNext()) {
-                    Statement blankStmt = blankStmtIterator.nextStatement();
-                    if (blankStmt.getPredicate().hasURI("http://ns.ottr.xyz/0.4/variable")){
-                        argument.setObject(blankStmt.getObject());
-                    } else if (blankStmt.getPredicate().hasURI("http://ns.ottr.xyz/0.4/type")){
-                        argument.setType(blankSelector.getObject());
-                    }
-                }
-                if (argument.getType() != null && argument.getObject() != null)
-                    template.getArguments().add(argument);
+        HashMap<ArrayList<Property>, ArrayList<Resource>> pairs = new HashMap<>();
+        ResIterator resIterator = inputModel.listSubjects();
+        while (resIterator.hasNext()) {
+            Resource subject = resIterator.nextResource();
+            StmtIterator stmtIterator = inputModel.listStatements(subject, null, (RDFNode) null);
+            ArrayList<Property> predicates = new ArrayList<>();
+            while (stmtIterator.hasNext()) {
+                Statement statement = stmtIterator.nextStatement();
+                predicates.add(statement.getPredicate());
             }
-            Manager.getManager().getTemplates().add(template);
+            predicates.sort(Comparator.comparing(Resource::getURI));
+            pairs.computeIfAbsent(predicates, k -> new ArrayList<>()).add(subject);
         }
-        pairFinder.findPairs();
-        StringWriter stringWriter = new StringWriter();
-        model.write(stringWriter, "TURTLE");
-        return stringWriter.toString();
+        
     }
 }

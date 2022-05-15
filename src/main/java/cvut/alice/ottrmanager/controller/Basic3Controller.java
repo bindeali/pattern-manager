@@ -1,12 +1,15 @@
 package cvut.alice.ottrmanager.controller;
 
 import cvut.alice.ottrmanager.tool.common.Manager;
-import org.apache.jena.rdf.model.*;
-import org.springframework.web.bind.annotation.*;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
-import java.io.StringWriter;
 import java.net.http.HttpHeaders;
 
 @RestController
@@ -18,7 +21,7 @@ public class Basic3Controller {
         if (model.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         }
-        Manager.getManager().getModel().add(model);
+        Manager.getManager().getDataset().getDefaultModel().add(model);
         response.setStatus(HttpServletResponse.SC_CREATED);
     }
 }

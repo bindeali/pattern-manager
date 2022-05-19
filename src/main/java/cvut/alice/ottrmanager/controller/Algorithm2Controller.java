@@ -1,6 +1,5 @@
 package cvut.alice.ottrmanager.controller;
 
-import cvut.alice.ottrmanager.tool.common.Manager;
 import org.apache.jena.rdf.model.*;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -9,16 +8,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 public class Algorithm2Controller {
     @PostMapping(path = "/create")
     public @ResponseBody String createNewODPsFromModel(@RequestBody String body, HttpServletResponse httpServletResponse) {
         Model inputModel = ModelFactory.createDefaultModel();
-        Model templateModel = Manager.getManager().getDataset().getDefaultModel();
         inputModel.read(new ByteArrayInputStream(body.getBytes()), null);
         if (inputModel.isEmpty()) {
             httpServletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -36,6 +36,12 @@ public class Algorithm2Controller {
             predicates.sort(Comparator.comparing(Resource::getURI));
             pairs.computeIfAbsent(predicates, k -> new ArrayList<>()).add(subject);
         }
-        
+        for (Map.Entry<ArrayList<Property>, ArrayList<Resource>> pair : pairs.entrySet()) {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("");
+        }
+        StringWriter stringWriter = new StringWriter();
+//        RDFDataMgr.write(stringWriter, result, RDFFormat.TURTLE);
+        return stringWriter.toString();
     }
 }

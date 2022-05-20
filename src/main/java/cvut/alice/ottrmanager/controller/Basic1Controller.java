@@ -9,6 +9,8 @@ import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -18,11 +20,13 @@ import java.io.StringWriter;
 
 @RestController
 public class Basic1Controller {
+    @Autowired
+    Environment env;
 
     @GetMapping("/template")
     public @ResponseBody
     String retrieveODP(@RequestParam(value = "iri") String IRI) {
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination("http://localhost:3030/default");
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(env.getProperty("FUSEKI"));
         try (RDFConnectionFuseki connection = (RDFConnectionFuseki) builder.build()) {
             Model inputModel = connection.fetchDataset().getDefaultModel();
             Node template = inputModel.getResource(IRI).asNode();

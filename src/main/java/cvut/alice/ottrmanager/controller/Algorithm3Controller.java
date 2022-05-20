@@ -5,6 +5,8 @@ import org.apache.jena.rdf.model.*;
 import org.apache.jena.rdfconnection.RDFConnectionFuseki;
 import org.apache.jena.rdfconnection.RDFConnectionRemoteBuilder;
 import org.apache.jena.vocabulary.RDF;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -19,10 +21,13 @@ import java.util.Objects;
 
 @RestController
 public class Algorithm3Controller {
+    @Autowired
+    Environment env;
+
     @PostMapping(path = "/suggest")
     public @ResponseBody HashMap<String, HashMap<String, ArrayList<String>>> suggestODPsFromModel(@RequestBody String body, HttpServletResponse httpServletResponse) {
 
-        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination("http://localhost:3030/default");
+        RDFConnectionRemoteBuilder builder = RDFConnectionFuseki.create().destination(env.getProperty("FUSEKI"));
         try (RDFConnectionFuseki connection = (RDFConnectionFuseki) builder.build()) {
             Model patternModel = connection.fetchDataset().getDefaultModel();
             // < pattern , < parameter type , parameter candidates > >
